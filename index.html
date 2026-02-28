@@ -2,54 +2,104 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>LiDAR Mapping Simulation</title>
+  <title>LiDAR Simulation Pro</title>
   <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
 </head>
 <body>
-<script>
 
+<button id="startBtn">Start Scan</button>
+<button id="clearBtn">Clear Map</button>
+
+<script>
 let angle = 0;
+let scanning = false;
 let points = [];
+let walls = [];
+let drawing = false;
+
+// Exemple murs fixes
+walls.push({x1:-200, y1:-200, x2:200, y2:-200});
+walls.push({x1:200, y1:-200, x2:200, y2:200});
+walls.push({x1:200, y1:200, x2:-200, y2:200});
+walls.push({x1:-200, y1:200, x2:-200, y2:-200});
 
 function setup() {
   createCanvas(window.innerWidth, window.innerHeight);
   background(0);
+
+  select('#startBtn').mousePressed(() => scanning = !scanning);
+  select('#clearBtn').mousePressed(() => points = []);
 }
 
 function draw() {
   translate(width/2, height/2);
 
-  // effet léger fade pour persistance
+  // Fade léger
   noStroke();
   fill(0, 20);
   rect(-width/2, -height/2, width, height);
 
-  // simulation distance (mur virtuel irrégulier)
-  let distance = 200 + 100 * noise(angle * 0.02);
-
-  let x = distance * cos(radians(angle));
-  let y = distance * sin(radians(angle));
-
-  points.push(createVector(x, y));
-
-  // dessiner points accumulés (map)
+  // Dessiner murs
   stroke(0, 255, 0);
   strokeWeight(2);
-  for (let p of points) {
-    point(p.x, p.y);
+  for (let w of walls) {
+    line(w.x1, w.y1, w.x2, w.y2);
   }
 
-  // dessiner laser
-  stroke(10, 0, 0);
-  line(20, 30, x, y);
+  // Scan LiDAR
+  if (scanning) {
+    let x, y;
+    // calcul distance pour chaque angle
+    let minDist = Infinity;
+    for (let w of walls) {
+      let d = distToLine(angle, w);
+      if (d < minDist) minDist = d;
+    }
+    x = minDist * cos(radians(angle));
+    y = minDist * sin(radians(angle));
+    points.push(createVector(x, y));
 
-  angle += 1;
+    // Dessiner laser
+    stroke(255, 0, 0);
+    line(0, 0, x, y);
 
-  if (angle >= 360) {
-    angle = 0;
+    // Avancer angle
+    angle += 1;
+    if (angle >= 360) angle = 0;
   }
+
+  // Dessiner points accumulés
+  stroke(255);
+  strokeWeight(3);
+  for (let p of points) point(p.x, p.y);
 }
 
+// Fonction pour calculer distance laser → ligne
+function distToLine(a, wall) {
+  let rad = radians(a);
+  let dx = cos(rad);
+  let dy = sin(rad);
+  let x0 = 0, y0 = 0;
+
+  let x1 = wall.x1, y1 = wall.y1;
+  let x2 = wall.x2, y2 = wall.y2;
+
+  // Formule projection laser sur segment
+  let t = ((x0 - x1) * (x2 - x1) + (y0 - y1) * (y2 - y1)) / ((x2 - x1)**2 + (y2 - y1)**2);
+  t = constrain(t, 0, 1);
+  let px = x1 + t * (x2 - x1);
+  let py = y1 + t * (y2 - y1);
+  return dist(x0, y0, px, py);
+}
+
+// Dessin avec la souris
+function mousePressed() { drawing = true; }
+function mouseReleased() { drawing = false; }
+function mouseDragged() {
+  if (drawing) {
+    walls.push({x1:mouseX-width/2, y1:mouseY-height/2, x2:mouseX-width/2, y2:mouseY-height/2});
+  }
+}
 </script>
 </body>
 </html>
