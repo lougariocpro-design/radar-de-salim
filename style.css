@@ -1,0 +1,13 @@
+body {
+  margin: 0;
+  background-color: black;
+  color: #62f51f;
+  font-family: monospace;
+  text-align: center;
+}
+
+#radar-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
