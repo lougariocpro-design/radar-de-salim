@@ -1,16 +1,55 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>Radar p5.js</title>
-  <link rel="stylesheet" href="style.css">
+  <title>LiDAR Mapping Simulation</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
 </head>
 <body>
-  <h1>Radar en ligne</h1>
-  <div id="radar-container"></div>
+<script>
 
-  <!-- p5.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
-  <script src="sketch.js"></script>
+let angle = 0;
+let points = [];
+
+function setup() {
+  createCanvas(window.innerWidth, window.innerHeight);
+  background(0);
+}
+
+function draw() {
+  translate(width/2, height/2);
+
+  // effet léger fade pour persistance
+  noStroke();
+  fill(0, 20);
+  rect(-width/2, -height/2, width, height);
+
+  // simulation distance (mur virtuel irrégulier)
+  let distance = 200 + 100 * noise(angle * 0.02);
+
+  let x = distance * cos(radians(angle));
+  let y = distance * sin(radians(angle));
+
+  points.push(createVector(x, y));
+
+  // dessiner points accumulés (map)
+  stroke(0, 255, 0);
+  strokeWeight(2);
+  for (let p of points) {
+    point(p.x, p.y);
+  }
+
+  // dessiner laser
+  stroke(255, 0, 0);
+  line(0, 0, x, y);
+
+  angle += 1;
+
+  if (angle >= 360) {
+    angle = 0;
+  }
+}
+
+</script>
 </body>
 </html>
