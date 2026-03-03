@@ -1,105 +1,66 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>LiDAR Simulation Pro</title>
-  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
+  <title>Radar en ligne</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background-color: #121212;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      margin-top: 20px;
+    }
+    #radarCanvas {
+      background-color: #000;
+      display: block;
+      margin: 20px auto;
+      border: 2px solid #0f0;
+    }
+  </style>
 </head>
 <body>
+  <h1>Radar en ligne</h1>
+  <canvas id="radarCanvas" width="400" height="400"></canvas>
 
-<button id="startBtn">Start Scan</button>
-<button id="clearBtn">Clear Map</button>
+  <script>
+    // Radar simple avec animation
+    const canvas = document.getElementById('radarCanvas');
+    const ctx = canvas.getContext('2d');
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = 180;
+    let angle = 0;
 
-<script>
-let angle = 0;
-let scanning = false;
-let points = [];
-let walls = [];
-let drawing = false;
+    function drawRadar() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-// Exemple murs fixes
-walls.push({x1:-200, y1:-200, x2:200, y2:-200});
-walls.push({x1:200, y1:-200, x2:200, y2:200});
-walls.push({x1:200, y1:200, x2:-200, y2:200});
-walls.push({x1:-200, y1:200, x2:-200, y2:-200});
+      // Cercle du radar
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#0f0';
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
-function setup() {
-  createCanvas(window.innerWidth, window.innerHeight);
-  background(0);
+      // Ligne tournante
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+      ctx.lineTo(x, y);
+      ctx.strokeStyle = 'rgba(0,255,0,0.7)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
-  select('#startBtn').mousePressed(() => scanning = !scanning);
-  select('#clearBtn').mousePressed(() => points = []);
-}
-
-function draw() {
-  translate(width/2, height/2);
-
-  // Fade léger
-  noStroke();
-  fill(0, 20);
-  rect(-width/2, -height/2, width, height);
-
-  // Dessiner murs
-  stroke(0, 255, 0);
-  strokeWeight(2);
-  for (let w of walls) {
-    line(w.x1, w.y1, w.x2, w.y2);
-  }
-
-  // Scan LiDAR
-  if (scanning) {
-    let x, y;
-    // calcul distance pour chaque angle
-    let minDist = Infinity;
-    for (let w of walls) {
-      let d = distToLine(angle, w);
-      if (d < minDist) minDist = d;
+      angle += 0.02; // vitesse de rotation
+      requestAnimationFrame(drawRadar);
     }
-    x = minDist * cos(radians(angle));
-    y = minDist * sin(radians(angle));
-    points.push(createVector(x, y));
 
-    // Dessiner laser
-    stroke(255, 0, 0);
-    line(0, 0, x, y);
-
-    // Avancer angle
-    angle += 1;
-    if (angle >= 360) angle = 0;
-  }
-
-  // Dessiner points accumulés
-  stroke(255);
-  strokeWeight(3);
-  for (let p of points) point(p.x, p.y);
-}
-
-// Fonction pour calculer distance laser → ligne
-function distToLine(a, wall) {
-  let rad = radians(a);
-  let dx = cos(rad);
-  let dy = sin(rad);
-  let x0 = 0, y0 = 0;
-
-  let x1 = wall.x1, y1 = wall.y1;
-  let x2 = wall.x2, y2 = wall.y2;
-
-  // Formule projection laser sur segment
-  let t = ((x0 - x1) * (x2 - x1) + (y0 - y1) * (y2 - y1)) / ((x2 - x1)**2 + (y2 - y1)**2);
-  t = constrain(t, 0, 1);
-  let px = x1 + t * (x2 - x1);
-  let py = y1 + t * (y2 - y1);
-  return dist(x0, y0, px, py);
-}
-
-// Dessin avec la souris
-function mousePressed() { drawing = true; }
-function mouseReleased() { drawing = false; }
-function mouseDragged() {
-  if (drawing) {
-    walls.push({x1:mouseX-width/2, y1:mouseY-height/2, x2:mouseX-width/2, y2:mouseY-height/2});
-  }
-}
-</script>
+    drawRadar();
+  </script>
 </body>
 </html>
